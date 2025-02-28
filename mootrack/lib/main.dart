@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:mootrack/managers/tracker_entry_manager.dart';
+import 'package:mootrack/managers/tracker_provider.dart';
 import 'package:mootrack/pages/HomePage/home_page.dart';
 import 'package:mootrack/pages/MooPlannerPage/moo_planner_page.dart';
-import 'package:mootrack/pages/MoodTrackerPage/mood_tracker_page.dart';
+import 'package:mootrack/pages/MoodTrackerPage/moo_tracker_page.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  initializeDateFormatting().then((_) => runApp(MyApp()));
+  initializeDateFormatting().then((_) => runApp(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (context) => TrackerProvider()),
+          ],
+          child: const MyApp(),
+        ),
+      ));
 }
 
 class MyApp extends StatelessWidget {
@@ -15,8 +22,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SharedPreferences.setMockInitialValues({});
-    TrackerEntryManager.loadTrackerEntriesFromPrefs();
+    Provider.of<TrackerProvider>(context, listen: false)
+        .loadTrackerEntriesFromPrefs();
+
     return MaterialApp(
       theme: ThemeData(useMaterial3: true),
       home: const MainApp(),
@@ -39,7 +47,6 @@ class _MainAppState extends State<MainApp> {
     return Scaffold(
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
-          TrackerEntryManager.saveTrackerEntriesIntoPrefs();
           setState(() {
             currentPageIndex = index;
           });

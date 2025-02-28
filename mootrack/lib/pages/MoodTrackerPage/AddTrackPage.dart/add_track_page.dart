@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mootrack/managers/mood_manager.dart';
-import 'package:mootrack/managers/tracker_entry_manager.dart';
+import 'package:mootrack/managers/tracker_provider.dart';
+import 'package:mootrack/pages/MoodTrackerPage/moo_tracker_page.dart';
 import 'package:mootrack/pages/MoodTrackerPage/tracker_entry.dart';
+import 'package:provider/provider.dart';
 
 class AddTrackPage extends StatefulWidget {
-  const AddTrackPage({super.key});
+  final MooTrackerPage trackerPage;
+  const AddTrackPage({super.key, required this.trackerPage});
 
   @override
   State<AddTrackPage> createState() => _AddTrackPageState();
@@ -117,13 +120,15 @@ class _AddTrackPageState extends State<AddTrackPage> {
                       // If the form is valid, display a snackbar. In the real world,
                       // you'd often call a server or save the information in a database.
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Processing Data')),
+                        const SnackBar(
+                            content: Text('Neuer Eintrag hinzugefügt')),
                       );
                     }
-                    TrackerEntryManager.addTrackerEntry(TrackerEntry(
-                        mood: _selectedMood,
-                        date: DateTime.now(),
-                        note: _note));
+                    Provider.of<TrackerProvider>(context, listen: false)
+                        .addTrackerEntry(TrackerEntry(
+                            mood: _selectedMood,
+                            date: DateTime.now(),
+                            note: _note));
                     Navigator.pop(context);
                   },
                   child: const Text('Eintragen'),

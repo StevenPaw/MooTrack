@@ -1,25 +1,17 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:mootrack/pages/MoodTrackerPage/tracker_entry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class TrackerEntryManager {
-  static SharedPreferences prefs =
-      SharedPreferences.getInstance() as SharedPreferences;
+class TrackerProvider extends ChangeNotifier {
+  SharedPreferences? prefs;
 
-  static List<TrackerEntry> _trackerEntries = [];
+  List<TrackerEntry> _trackerEntries = [];
 
-  static List<TrackerEntry> get trackerEntries => _trackerEntries;
+  List<TrackerEntry> get trackerEntries => _trackerEntries;
 
-  static final TrackerEntryManager _singleton = TrackerEntryManager._internal();
-
-  factory TrackerEntryManager() {
-    return _singleton;
-  }
-
-  TrackerEntryManager._internal();
-
-  static List<TrackerEntry> trackerEntriesOnSelectedDay(DateTime selectedDay) {
+  List<TrackerEntry> trackerEntriesOnSelectedDay(DateTime selectedDay) {
     return _trackerEntries.where((entry) {
       return entry.date.year == selectedDay.year &&
           entry.date.month == selectedDay.month &&
@@ -27,32 +19,35 @@ class TrackerEntryManager {
     }).toList();
   }
 
-  static void addTrackerEntry(TrackerEntry trackerEntry) {
+  void addTrackerEntry(TrackerEntry trackerEntry) {
     _trackerEntries.add(trackerEntry);
     saveTrackerEntriesIntoPrefs();
+    notifyListeners();
   }
 
-  static void removeTrackerEntry(TrackerEntry trackerEntry) {
+  void removeTrackerEntry(TrackerEntry trackerEntry) {
     _trackerEntries.remove(trackerEntry);
     saveTrackerEntriesIntoPrefs();
+    notifyListeners();
   }
 
-  static void updateTrackerEntry(TrackerEntry oldEntry, TrackerEntry newEntry) {
+  void updateTrackerEntry(TrackerEntry oldEntry, TrackerEntry newEntry) {
     final index = _trackerEntries.indexOf(oldEntry);
     _trackerEntries[index] = newEntry;
     saveTrackerEntriesIntoPrefs();
+    notifyListeners();
   }
 
-  static void clearTrackerEntries() {
+  void clearTrackerEntries() {
     _trackerEntries.clear();
     saveTrackerEntriesIntoPrefs();
+    notifyListeners();
   }
 
-  static void loadTrackerEntriesFromPrefs() async {
-    prefs = await SharedPreferences.getInstance();
-
+  void loadTrackerEntriesFromPrefs() async {
+    prefs ??= await SharedPreferences.getInstance();
     final List<String> trackerEntriesJson =
-        prefs.getStringList('trackerEntries') ?? [];
+        prefs?.getStringList('trackerEntries') ?? [];
     _trackerEntries = trackerEntriesJson.map((entryJson) {
       final Map<String, dynamic> entryMap = jsonDecode(entryJson);
       return TrackerEntry(
@@ -63,14 +58,12 @@ class TrackerEntryManager {
     }).toList();
 
     _trackerEntries.sort((a, b) => b.date.compareTo(a.date));
-    addTrackerEntry(TrackerEntry(
-      mood: 3,
-      date: DateTime.now(),
-      note: 'Das hier ist ein Platzhalter und ein Beispiel zugleich!',
-    ));
   }
 
-  static void saveTrackerEntriesIntoPrefs() async {
+  void saveTrackerEntriesIntoPrefs() async {
+    if (prefs == null || !_trackerEntries.isNotEmpty) {
+      return;
+    }
     final List<String> trackerEntriesJson = _trackerEntries.map((entry) {
       final Map<String, dynamic> entryMap = {
         'mood': entry.mood,
@@ -79,6 +72,6 @@ class TrackerEntryManager {
       };
       return jsonEncode(entryMap);
     }).toList();
-    prefs.setStringList('trackerEntries', trackerEntriesJson);
+    prefs?.setStringList('trackerEntries', trackerEntriesJson);
   }
 }
